@@ -1,3 +1,6 @@
 <resources>
-    <string name="app_name">KawanKasir-FE</string>
+    <string name="app_name">Kawan Kasir</string>
+    <string name="login_hint">Login online ke backend Kawan Kasir</string>
+    <string name="shift_status">Shift terbuka • STORE01</string>
+    <string name="developer_name">Dikembangkan oleh Lukimia Tech</string>
 </resources>

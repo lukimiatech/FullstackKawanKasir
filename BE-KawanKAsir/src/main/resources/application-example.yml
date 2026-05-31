@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/kawan_kasir?useSSL=false&serverTimezone=Asia/Jakarta
+    username: root
+    password: change-me
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: false
+
+app:
+  jwt:
+    secret: change-this-with-a-long-random-secret-minimum-32-characters
+    access-token-minutes: 120
+    refresh-token-days: 14
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:3000

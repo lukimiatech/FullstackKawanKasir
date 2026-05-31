@@ -1,4 +1,5 @@
 [versions]
+kotlin = "2.2.10"
 agp = "9.0.1"
 coreKtx = "1.18.0"
 junit = "4.13.2"
@@ -20,5 +21,6 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 
 [plugins]
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 
