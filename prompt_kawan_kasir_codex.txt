@@ -1,0 +1,1184 @@
+PROMPT UNTUK CODEX - SISTEM POS KAWAN KASIR
+
+Saya ingin membuat aplikasi Point of Sale / POS bernama Kawan Kasir.
+
+Aplikasi ini terdiri dari:
+
+1. Backend API
+   - Gunakan Spring Boot
+   - Database lokal menggunakan MySQL
+   - Sistem bersifat online-only, tidak perlu mode offline
+   - Backend harus menyediakan REST API lengkap untuk web admin dan Android kasir
+
+2. Web Admin
+   - Web hanya untuk level admin, owner, manager, finance, inventory, dan super admin
+   - Web digunakan untuk pengelolaan sistem POS, bukan untuk kasir utama
+   - Kasir utama digunakan melalui aplikasi Android
+
+3. Android App
+   - Gunakan Kotlin
+   - Android digunakan oleh kasir/staff toko untuk transaksi POS
+   - Android login ke backend menggunakan API
+   - Android tidak perlu offline mode
+
+Nama aplikasi: Kawan Kasir
+
+Gunakan logo Kawan Kasir sebagai dasar tema UI. Warna utama mengikuti logo:
+- Primary Blue: #039CD5
+- Dark Blue: #02315E
+- Secondary Blue: #075D92
+- Orange: #FC8200
+- Yellow: #FDBD0D
+- Green: #078546
+- Light Green: #6ABD2D
+- Background Light: #F8F9F2
+- White: #FFFFFF
+
+Tema aplikasi harus terlihat:
+- Cerah
+- Bersih
+- Modern
+- Friendly
+- Profesional
+- Cocok dengan logo Kawan Kasir
+- Banyak menggunakan kombinasi biru, orange, kuning, hijau, dan putih
+
+============================================================
+1. STRUKTUR PROJECT
+============================================================
+
+Buat sistem dengan struktur repo seperti ini:
+
+kawan-kasir/
+├── backend/
+│   └── springboot-api/
+├── web-admin/
+│   └── admin-dashboard/
+├── android/
+│   └── kawan-kasir-android/
+├── database/
+│   ├── schema.sql
+│   ├── seed.sql
+│   └── README.md
+└── README.md
+
+Backend utama menggunakan Spring Boot.
+Android menggunakan Kotlin.
+Web admin boleh menggunakan React + TypeScript + Vite + Tailwind CSS, kecuali repo web sudah memiliki stack lain.
+
+============================================================
+2. BACKEND SPRING BOOT
+============================================================
+
+Buat backend menggunakan:
+
+- Spring Boot 3.x
+- Java 17 atau Java 21
+- Spring Security
+- JWT Authentication
+- Spring Data JPA
+- MySQL Driver
+- Flyway atau Liquibase untuk migration
+- Validation
+- Lombok jika diperlukan
+- OpenAPI / Swagger
+- Maven atau Gradle, sesuaikan dengan project yang ada
+
+Backend harus memiliki fitur:
+
+AUTHENTICATION
+
+Buat endpoint:
+
+POST /api/auth/login
+POST /api/auth/logout
+POST /api/auth/refresh-token
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+POST /api/auth/change-password
+GET  /api/auth/me
+
+Login menggunakan email/username dan password.
+
+Gunakan JWT access token dan refresh token.
+
+Password harus disimpan dalam bentuk hash menggunakan BCrypt.
+
+============================================================
+3. ROLE DAN HAK AKSES
+============================================================
+
+Buat role-based access control.
+
+Role utama:
+
+SUPER_ADMIN
+OWNER
+ADMIN
+MANAGER
+CASHIER
+INVENTORY_STAFF
+FINANCE
+
+Permission dasar:
+
+SUPER_ADMIN
+- Akses semua fitur
+- Kelola semua toko/cabang
+- Kelola owner/admin
+- Kelola role
+- Reset password user
+- Melihat semua laporan
+
+OWNER
+- Kelola toko miliknya
+- Kelola cabang
+- Kelola user
+- Kelola inventori
+- Kelola laporan keuangan
+- Kelola pengaturan struk
+- Kelola produk
+- Kelola transaksi
+
+ADMIN
+- Kelola produk
+- Kelola kategori
+- Kelola inventori
+- Kelola user toko
+- Kelola pengaturan struk
+- Melihat laporan
+
+MANAGER
+- Melihat laporan
+- Approve koreksi transaksi jika ada
+- Kelola stok
+- Kelola shift kasir
+
+CASHIER
+- Login Android
+- Membuat transaksi penjualan
+- Cetak/simpan struk
+- Melihat riwayat transaksi miliknya
+- Buka/tutup shift
+- Tidak boleh menghapus transaksi
+
+INVENTORY_STAFF
+- Kelola stok
+- Stok masuk
+- Stok keluar
+- Stock opname
+- Supplier
+- Purchase order sederhana
+
+FINANCE
+- Melihat laporan keuangan
+- Melihat transaksi
+- Export laporan
+- Tidak boleh mengubah produk/stok kecuali diberi permission
+
+Buat table role dan permission agar fleksibel, bukan hardcode sepenuhnya.
+
+============================================================
+4. FITUR BACKEND POS LENGKAP
+============================================================
+
+A. MASTER DATA
+
+OUTLET / TOKO / CABANG
+
+Field minimal:
+
+id
+name
+code
+address
+phone
+email
+tax_number
+logo_url
+is_active
+created_at
+updated_at
+
+Endpoint:
+
+GET    /api/outlets
+POST   /api/outlets
+GET    /api/outlets/{id}
+PUT    /api/outlets/{id}
+DELETE /api/outlets/{id}
+
+USER MANAGEMENT
+
+Field minimal:
+
+id
+outlet_id
+name
+email
+username
+phone
+password_hash
+role_id
+is_active
+last_login_at
+created_at
+updated_at
+
+Endpoint:
+
+GET    /api/users
+POST   /api/users
+GET    /api/users/{id}
+PUT    /api/users/{id}
+DELETE /api/users/{id}
+POST   /api/users/{id}/reset-password
+POST   /api/users/{id}/activate
+POST   /api/users/{id}/deactivate
+
+ROLE MANAGEMENT
+
+Endpoint:
+
+GET    /api/roles
+POST   /api/roles
+GET    /api/roles/{id}
+PUT    /api/roles/{id}
+DELETE /api/roles/{id}
+POST   /api/roles/{id}/permissions
+
+B. PRODUK DAN INVENTORI
+
+KATEGORI PRODUK
+
+GET    /api/categories
+POST   /api/categories
+GET    /api/categories/{id}
+PUT    /api/categories/{id}
+DELETE /api/categories/{id}
+
+PRODUK
+
+Field minimal:
+
+id
+outlet_id
+category_id
+sku
+barcode
+name
+description
+image_url
+unit
+purchase_price
+selling_price
+wholesale_price
+stock
+min_stock
+is_stock_tracked
+is_active
+created_at
+updated_at
+
+Endpoint:
+
+GET    /api/products
+POST   /api/products
+GET    /api/products/{id}
+PUT    /api/products/{id}
+DELETE /api/products/{id}
+GET    /api/products/search?keyword=
+GET    /api/products/barcode/{barcode}
+POST   /api/products/import
+GET    /api/products/export
+
+STOCK MOVEMENT
+
+Buat histori stok:
+
+id
+outlet_id
+product_id
+type
+quantity
+before_stock
+after_stock
+reference_type
+reference_id
+note
+created_by
+created_at
+
+Type:
+
+IN
+OUT
+SALE
+RETURN
+ADJUSTMENT
+OPNAME
+TRANSFER
+
+Endpoint:
+
+GET  /api/stock-movements
+POST /api/stock-movements/adjustment
+POST /api/stock-movements/opname
+GET  /api/stock-movements/product/{productId}
+
+SUPPLIER
+
+GET    /api/suppliers
+POST   /api/suppliers
+GET    /api/suppliers/{id}
+PUT    /api/suppliers/{id}
+DELETE /api/suppliers/{id}
+
+PURCHASE / PEMBELIAN STOK
+
+GET    /api/purchases
+POST   /api/purchases
+GET    /api/purchases/{id}
+PUT    /api/purchases/{id}
+DELETE /api/purchases/{id}
+POST   /api/purchases/{id}/receive
+
+Saat pembelian diterima, stok produk harus bertambah otomatis dan masuk ke stock movement.
+
+C. TRANSAKSI PENJUALAN POS
+
+Buat modul transaksi lengkap.
+
+SALES TRANSACTION
+
+Header:
+
+id
+outlet_id
+invoice_number
+cashier_id
+customer_id
+shift_id
+subtotal
+discount_total
+tax_total
+service_charge
+grand_total
+paid_amount
+change_amount
+payment_status
+transaction_status
+payment_method
+note
+created_at
+updated_at
+
+Item:
+
+id
+sale_id
+product_id
+product_name
+sku
+quantity
+price
+discount
+subtotal
+
+Payment:
+
+id
+sale_id
+method
+amount
+reference_number
+paid_at
+
+Payment method:
+
+CASH
+QRIS
+DEBIT
+CREDIT_CARD
+BANK_TRANSFER
+E_WALLET
+MIXED
+
+Transaction status:
+
+COMPLETED
+VOID
+REFUNDED
+PENDING
+
+Endpoint:
+
+POST /api/sales
+GET  /api/sales
+GET  /api/sales/{id}
+GET  /api/sales/invoice/{invoiceNumber}
+POST /api/sales/{id}/void
+POST /api/sales/{id}/refund
+GET  /api/sales/{id}/receipt
+
+Saat transaksi berhasil:
+- Kurangi stok produk otomatis
+- Simpan stock movement type SALE
+- Simpan pembayaran
+- Generate nomor invoice otomatis
+- Simpan data struk
+- Transaksi tidak boleh dihapus permanen, hanya boleh VOID/REFUND
+- Pastikan transaksi atomic menggunakan database transaction
+
+D. SHIFT KASIR
+
+Buat fitur buka dan tutup shift.
+
+Field:
+
+id
+outlet_id
+cashier_id
+opening_cash
+closing_cash
+expected_cash
+difference
+opened_at
+closed_at
+status
+note
+
+Endpoint:
+
+POST /api/shifts/open
+POST /api/shifts/close
+GET  /api/shifts/current
+GET  /api/shifts
+GET  /api/shifts/{id}
+
+Kasir hanya bisa transaksi jika shift sedang terbuka.
+
+E. CUSTOMER
+
+GET    /api/customers
+POST   /api/customers
+GET    /api/customers/{id}
+PUT    /api/customers/{id}
+DELETE /api/customers/{id}
+
+Field:
+
+id
+outlet_id
+name
+phone
+email
+address
+points
+created_at
+updated_at
+
+F. DISKON, PAJAK, DAN BIAYA LAYANAN
+
+Buat setting:
+
+GET  /api/settings/tax
+PUT  /api/settings/tax
+GET  /api/settings/discount
+PUT  /api/settings/discount
+
+Support:
+- Pajak persen
+- Service charge
+- Diskon nominal
+- Diskon persen
+- Diskon per item
+- Diskon transaksi
+
+============================================================
+5. PENGATURAN STRUK DAN KUSTOM STRUK
+============================================================
+
+Web admin harus bisa mengatur struk.
+
+Field receipt setting:
+
+id
+outlet_id
+business_name
+business_address
+business_phone
+footer_message
+show_logo
+show_cashier_name
+show_customer_name
+show_tax
+show_discount
+paper_size
+printer_type
+custom_header
+custom_footer
+created_at
+updated_at
+
+Paper size:
+
+58mm
+80mm
+A4
+
+Endpoint:
+
+GET /api/receipt-settings
+PUT /api/receipt-settings
+GET /api/receipt-preview
+
+Struk harus menampilkan:
+
+Logo / Nama Toko
+Alamat
+No. Telp
+Tanggal & Jam
+Nomor Invoice
+Nama Kasir
+Nama Customer jika ada
+Daftar item
+Qty
+Harga
+Diskon
+Subtotal
+Pajak
+Total
+Metode pembayaran
+Bayar
+Kembalian
+Footer custom
+
+Buat HTML receipt template dan endpoint untuk preview.
+
+============================================================
+6. LAPORAN KEUANGAN
+============================================================
+
+Buat laporan lengkap untuk web admin.
+
+Endpoint:
+
+GET /api/reports/dashboard
+GET /api/reports/sales-summary
+GET /api/reports/sales-detail
+GET /api/reports/profit-loss
+GET /api/reports/payment-methods
+GET /api/reports/best-selling-products
+GET /api/reports/low-stock
+GET /api/reports/stock-card
+GET /api/reports/cashier-performance
+GET /api/reports/shift-summary
+GET /api/reports/export/excel
+GET /api/reports/export/pdf
+
+Laporan minimal:
+
+1. Ringkasan penjualan harian
+2. Penjualan mingguan
+3. Penjualan bulanan
+4. Total transaksi
+5. Total omzet
+6. Total laba kotor
+7. Produk terlaris
+8. Produk stok menipis
+9. Metode pembayaran paling banyak digunakan
+10. Performa kasir
+11. Riwayat shift
+12. Laporan stok masuk/keluar
+13. Laporan laba rugi sederhana
+
+Gunakan query yang efisien.
+
+============================================================
+7. WEB ADMIN
+============================================================
+
+Buat web admin dengan desain modern sesuai logo Kawan Kasir.
+
+Gunakan tema:
+
+:root {
+  --primary-blue: #039CD5;
+  --dark-blue: #02315E;
+  --secondary-blue: #075D92;
+  --orange: #FC8200;
+  --yellow: #FDBD0D;
+  --green: #078546;
+  --light-green: #6ABD2D;
+  --background: #F8F9F2;
+  --white: #FFFFFF;
+}
+
+Halaman web admin:
+
+AUTH
+- Login
+- Forgot password
+- Reset password
+- Change password
+
+DASHBOARD
+Tampilkan:
+- Total penjualan hari ini
+- Total transaksi hari ini
+- Total laba kotor
+- Produk terlaris
+- Stok menipis
+- Grafik penjualan harian/mingguan/bulanan
+- Ringkasan metode pembayaran
+- Aktivitas transaksi terbaru
+
+USER MANAGEMENT
+- List user
+- Tambah user
+- Edit user
+- Nonaktifkan user
+- Reset password
+- Assign role
+
+ROLE MANAGEMENT
+- List role
+- Tambah role
+- Edit role
+- Atur permission
+
+OUTLET MANAGEMENT
+- Kelola outlet/cabang
+- Detail outlet
+- Status aktif/nonaktif
+
+PRODUK
+- List produk
+- Search produk
+- Filter kategori
+- Tambah produk
+- Edit produk
+- Upload gambar produk
+- Barcode/SKU
+- Aktif/nonaktif produk
+- Import/export produk
+
+KATEGORI
+- CRUD kategori
+
+INVENTORI
+- Stok masuk
+- Stok keluar
+- Adjustment stok
+- Stock opname
+- Riwayat stock movement
+- Produk stok menipis
+
+SUPPLIER
+- CRUD supplier
+
+PEMBELIAN STOK
+- Buat pembelian
+- Riwayat pembelian
+- Terima stok pembelian
+- Update stok otomatis saat barang diterima
+
+TRANSAKSI
+- List transaksi
+- Detail transaksi
+- Filter tanggal
+- Filter kasir
+- Filter metode pembayaran
+- Print/preview struk
+- Void/refund transaksi sesuai role
+
+SHIFT KASIR
+- List shift
+- Detail shift
+- Opening cash
+- Closing cash
+- Selisih kas
+
+LAPORAN KEUANGAN
+- Sales summary
+- Sales detail
+- Profit/loss sederhana
+- Payment method report
+- Best selling product
+- Low stock report
+- Cashier performance
+- Export PDF
+- Export Excel
+
+PENGATURAN STRUK
+- Nama bisnis
+- Alamat
+- Nomor telepon
+- Logo
+- Header custom
+- Footer custom
+- Ukuran kertas 58mm / 80mm / A4
+- Preview struk langsung
+
+PENGATURAN SISTEM
+- Pajak
+- Service charge
+- Format invoice
+- Mata uang Rupiah
+- Timezone Asia/Jakarta
+- Format tanggal Indonesia
+
+UI harus:
+- Responsive desktop/tablet
+- Sidebar modern
+- Navbar atas
+- Card clean
+- Tabel dengan search, filter, pagination
+- Form validasi lengkap
+- Toast notification
+- Loading state
+- Empty state
+- Error state
+- Confirmation modal saat delete/void/refund/reset password
+
+============================================================
+8. ANDROID KOTLIN POS
+============================================================
+
+Buat Android app untuk kasir menggunakan Kotlin.
+
+Gunakan:
+- Kotlin
+- MVVM
+- Retrofit
+- OkHttp
+- Coroutines
+- ViewModel
+- Room tidak wajib karena sistem online-only
+- DataStore untuk token/session
+- Material Design
+- Navigation Component atau Compose Navigation
+- Jika project sudah XML, gunakan XML. Jika dari awal, boleh gunakan Jetpack Compose.
+
+Android screen:
+
+LOGIN
+- Input username/email
+- Input password
+- Remember session
+- Login ke backend
+- Simpan token
+- Ambil profile user
+- Role CASHIER/MANAGER bisa masuk
+
+DASHBOARD KASIR
+Tampilkan:
+- Nama kasir
+- Nama outlet
+- Status shift
+- Tombol buka shift
+- Tombol mulai transaksi
+- Ringkasan penjualan shift berjalan
+- Riwayat transaksi terbaru
+
+BUKA SHIFT
+- Input modal awal/opening cash
+- Simpan ke backend
+- Kasir tidak bisa transaksi sebelum buka shift
+
+POS / TRANSAKSI
+Fitur:
+- Search produk
+- Scan barcode
+- Pilih kategori
+- Tambah item ke cart
+- Ubah qty
+- Hapus item dari cart
+- Diskon item
+- Diskon transaksi
+- Hitung subtotal
+- Hitung pajak
+- Hitung total
+- Pilih metode pembayaran
+- Input uang bayar
+- Hitung kembalian
+- Submit transaksi ke backend
+- Setelah sukses tampilkan struk
+
+PEMBAYARAN
+Support:
+- Cash
+- QRIS
+- Debit
+- Credit Card
+- E-Wallet
+- Bank Transfer
+
+STRUK
+- Tampilkan preview struk
+- Share struk
+- Print struk jika printer tersedia
+- Simpan riwayat transaksi
+
+RIWAYAT TRANSAKSI
+- List transaksi kasir
+- Detail transaksi
+- Print ulang struk
+
+TUTUP SHIFT
+- Tampilkan expected cash
+- Input closing cash
+- Hitung selisih
+- Submit tutup shift
+
+PROFILE
+- Data kasir
+- Change password
+- Logout
+
+Android UI harus mengikuti tema logo Kawan Kasir:
+- Primary blue untuk header/button utama
+- Orange untuk CTA penting
+- Green untuk status sukses
+- Yellow untuk highlight
+- Background putih/light cream
+- Card clean dan rounded
+
+============================================================
+9. DATABASE MYSQL
+============================================================
+
+Buat file:
+
+database/schema.sql
+database/seed.sql
+
+Database name:
+
+kawan_kasir_db
+
+Buat minimal table:
+
+outlets
+users
+roles
+permissions
+role_permissions
+user_outlets
+categories
+products
+suppliers
+purchases
+purchase_items
+stock_movements
+customers
+sales
+sale_items
+sale_payments
+shifts
+receipt_settings
+tax_settings
+system_settings
+password_reset_tokens
+refresh_tokens
+audit_logs
+
+Semua table wajib memiliki:
+
+created_at
+updated_at
+
+Table penting juga memiliki:
+
+created_by
+updated_by
+deleted_at
+
+Gunakan soft delete untuk data penting seperti produk, user, transaksi, supplier, customer.
+
+Buat seed awal:
+
+Role:
+- SUPER_ADMIN
+- OWNER
+- ADMIN
+- MANAGER
+- CASHIER
+- INVENTORY_STAFF
+- FINANCE
+
+User:
+email: admin@kawankasir.local
+username: admin
+password: admin123
+role: SUPER_ADMIN
+
+Password seed harus tetap di-hash BCrypt, jangan plain text di database akhir.
+
+Buat sample outlet:
+
+Nama: Kawan Kasir Demo Store
+Alamat: Jakarta, Indonesia
+Telepon: 021-000000
+
+Buat sample kategori dan produk dummy untuk testing.
+
+============================================================
+10. AUDIT LOG
+============================================================
+
+Buat audit log untuk aktivitas penting:
+
+LOGIN
+LOGOUT
+CREATE_USER
+RESET_PASSWORD
+CREATE_PRODUCT
+UPDATE_PRODUCT
+DELETE_PRODUCT
+STOCK_ADJUSTMENT
+CREATE_SALE
+VOID_SALE
+REFUND_SALE
+OPEN_SHIFT
+CLOSE_SHIFT
+UPDATE_RECEIPT_SETTING
+
+Endpoint:
+
+GET /api/audit-logs
+
+Hanya role tertentu yang boleh akses audit log.
+
+============================================================
+11. VALIDASI DAN KEAMANAN
+============================================================
+
+Backend harus memiliki:
+
+- JWT Authentication
+- Refresh token
+- BCrypt password
+- Role-based authorization
+- Input validation
+- Global exception handler
+- Standard API response format
+- Pagination
+- Sorting
+- Filtering
+- CORS config
+- Audit log
+- Transactional service untuk sales dan stock
+- Tidak boleh menghapus transaksi permanen
+- Gunakan soft delete untuk data penting
+- Gunakan timezone Asia/Jakarta
+- Currency default IDR
+
+Format response API:
+
+{
+  "success": true,
+  "message": "Success",
+  "data": {},
+  "timestamp": "2026-05-31T20:00:00+07:00"
+}
+
+Format error:
+
+{
+  "success": false,
+  "message": "Validation error",
+  "errors": [],
+  "timestamp": "2026-05-31T20:00:00+07:00"
+}
+
+============================================================
+12. STANDAR NOMOR INVOICE
+============================================================
+
+Buat format invoice otomatis:
+
+KK-{OUTLET_CODE}-{YYYYMMDD}-{RUNNING_NUMBER}
+
+Contoh:
+
+KK-STORE01-20260531-0001
+
+Running number reset setiap hari per outlet.
+
+============================================================
+13. EXPORT DAN PRINT
+============================================================
+
+Web admin harus mendukung:
+
+- Export laporan ke Excel
+- Export laporan ke PDF
+- Preview struk
+- Print struk
+- Print laporan
+
+Android minimal:
+
+- Preview struk
+- Share struk
+- Print struk jika printer Bluetooth/USB/network tersedia
+- Untuk tahap awal, buat abstraction/service printer agar nanti mudah ditambahkan printer thermal
+
+============================================================
+14. DOKUMENTASI
+============================================================
+
+Buat dokumentasi lengkap:
+
+README.md
+backend/README.md
+web-admin/README.md
+android/README.md
+database/README.md
+
+Dokumentasi harus menjelaskan:
+
+- Cara menjalankan backend
+- Cara membuat database MySQL
+- Cara import schema.sql dan seed.sql
+- Cara konfigurasi application.properties/application.yml
+- Cara menjalankan web admin
+- Cara menjalankan Android
+- Default akun login
+- Daftar endpoint API utama
+- Struktur role dan permission
+- Alur transaksi POS
+- Alur stock movement
+- Alur buka/tutup shift
+
+============================================================
+15. PRIORITAS IMPLEMENTASI
+============================================================
+
+Kerjakan bertahap dengan urutan:
+
+TAHAP 1 - BACKEND CORE
+1. Setup Spring Boot
+2. Setup MySQL
+3. Entity database utama
+4. Migration/schema
+5. Auth JWT
+6. Role permission
+7. User management
+8. Outlet management
+
+TAHAP 2 - POS CORE
+1. Category
+2. Product
+3. Stock movement
+4. Customer
+5. Shift
+6. Sales transaction
+7. Receipt setting
+
+TAHAP 3 - WEB ADMIN
+1. Login
+2. Dashboard
+3. User/role management
+4. Product/inventory
+5. Transaction
+6. Receipt setting
+7. Reports
+
+TAHAP 4 - ANDROID POS
+1. Login
+2. Dashboard kasir
+3. Open shift
+4. POS cart
+5. Payment
+6. Receipt preview
+7. Transaction history
+8. Close shift
+
+TAHAP 5 - FINALISASI
+1. Export laporan
+2. Audit log
+3. Error handling
+4. UI polishing
+5. Testing
+6. README lengkap
+
+============================================================
+16. TESTING
+============================================================
+
+Buat testing minimal:
+
+Backend:
+- Auth login
+- Create product
+- Create sale
+- Stock berkurang setelah sale
+- Void sale
+- Open shift
+- Close shift
+- Role access
+
+Web:
+- Login
+- Load dashboard
+- CRUD produk
+- CRUD user
+- Laporan tampil
+
+Android:
+- Login
+- Open shift
+- Search product
+- Add to cart
+- Checkout
+- Receipt preview
+- Close shift
+
+============================================================
+17. INSTRUKSI KERJA UNTUK CODEX
+============================================================
+
+Sebelum coding:
+1. Baca struktur repo yang tersedia.
+2. Jangan menghapus file penting yang sudah ada.
+3. Ikuti style project yang sudah ada.
+4. Buat rencana implementasi singkat.
+5. Implementasikan secara modular.
+6. Pastikan setiap fitur punya service, repository, DTO, controller, dan validation.
+7. Pastikan backend bisa berjalan tanpa error.
+8. Pastikan web admin bisa build.
+9. Pastikan Android bisa build.
+10. Jika ada dependensi yang perlu ditambahkan, tambahkan dengan rapi.
+11. Gunakan nama package yang rapi, misalnya:
+
+com.kawankasir.api
+com.kawankasir.android
+
+12. Jangan hardcode data penting.
+13. Gunakan environment/config file.
+14. Buat contoh .env.example atau application-example.yml.
+15. Setelah selesai, tulis ringkasan perubahan dan cara menjalankannya.
+
+============================================================
+18. OUTPUT YANG SAYA HARAPKAN
+============================================================
+
+Saya ingin Codex menghasilkan:
+
+1. Backend Spring Boot lengkap
+2. REST API POS lengkap
+3. Database MySQL schema dan seed
+4. Web admin dashboard lengkap
+5. Android Kotlin POS app
+6. Role-based access control
+7. Auth JWT
+8. Modul produk, inventori, transaksi, shift, laporan, user, role, struk
+9. UI mengikuti warna logo Kawan Kasir
+10. Dokumentasi lengkap
+11. Project bisa dijalankan lokal
+
+Pastikan sistem ini siap dikembangkan menjadi produk POS komersial.
+Buat kode yang clean, scalable, mudah dikembangkan, dan tidak asal jadi.
